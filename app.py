@@ -1,30 +1,61 @@
 import pandas as pd
 
-# 1) Ler planilha padrão (modelo) e CSV de códigos
-Df_Planilha_Padrao = pd.read_excel(r"planilhas/planilhaPadrao.xlsx")
-print("Planilha Padrão carregada com sucesso.")
 
-Df_Codigos_CSV = pd.read_csv(r"planilhas/test.csv", header=None, names=["CODIGO"])
-print("CSV de Códigos carregado com sucesso.")
+def gerar_planilha_com_codigos(
+	caminho_planilha_modelo: str,
+	caminho_csv_codigos: str,
+	caminho_saida: str,
+	nome_coluna_codigo: str = "item(table) + it-codigo(field)",
+) -> None:
+	"""Gera uma nova planilha Excel preenchendo apenas a coluna de códigos.
 
-# 2) Usar a primeira linha da planilha como modelo
-linha_modelo = Df_Planilha_Padrao.iloc[0]
+	- Mantém a primeira linha igual à planilha modelo.
+	- A partir da segunda linha, preenche só a coluna de código com os valores do CSV.
+	"""
 
-# 3) Criar nova planilha: título na primeira linha, dados a partir da segunda
-quantidade_codigos = len(Df_Codigos_CSV)
-Df_Novo = pd.concat([linha_modelo.to_frame().T] * (quantidade_codigos + 1), ignore_index=True)
+	# 1) Ler planilha padrão (modelo) e CSV de códigos
+	df_planilha = pd.read_excel(caminho_planilha_modelo)
+	print("Planilha Padrão carregada com sucesso.")
 
-# 4) Deixar todas as outras colunas vazias a partir da segunda linha
-coluna_codigo = "item(table) + it-codigo(field)"
-colunas_outros = [c for c in Df_Novo.columns if c != coluna_codigo]
-Df_Novo.loc[1:, colunas_outros] = ""
+	df_codigos = pd.read_csv(caminho_csv_codigos, header=None, names=["CODIGO"])
+	print("CSV de Códigos carregado com sucesso.")
 
-# 5) Preencher a coluna de código a partir da segunda linha
-Df_Novo.loc[1:, coluna_codigo] = Df_Codigos_CSV["CODIGO"].values
+	# 2) Usar a primeira linha da planilha como modelo
+	linha_modelo = df_planilha.iloc[0]
 
-print(Df_Codigos_CSV.head(20))
-print(Df_Novo.head(20))
+	# 3) Criar nova planilha: título na primeira linha, dados a partir da segunda
+	quantidade_codigos = len(df_codigos)
+	df_novo = pd.concat([linha_modelo.to_frame().T] * (quantidade_codigos + 1), ignore_index=True)
 
-# 6) Salvar planilha atualizada
-Df_Novo.to_excel(r"planilhas/planilha_atualizada.xlsx", index=False)
-print("Planilha atualizada salva com sucesso.")
+	# 4) Deixar todas as outras colunas vazias a partir da segunda linha
+	coluna_codigo = nome_coluna_codigo
+	colunas_outros = [c for c in df_novo.columns if c != coluna_codigo]
+	df_novo.loc[1:, colunas_outros] = ""
+
+	# 5) Preencher a coluna de código a partir da segunda linha
+	df_novo.loc[1:, coluna_codigo] = df_codigos["CODIGO"].values
+
+	print(df_codigos.head(20))
+	print(df_novo.head(20))
+
+	# 6) Salvar planilha atualizada
+	df_novo.to_excel(caminho_saida, index=False)
+	print("Planilha atualizada salva com sucesso.")
+
+
+def iserir_dados():
+	df_planilha_atualizada = pd.read_excel(r"planilhas/planilha_atualizada.xlsx")
+	print("Planilha Atualizada carregada com sucesso.")
+
+	df_base_dados_TOTVS = pd.read_excel(r"planilhas/base_dados_TOTVS.xlsx")
+	print("Base de Dados TOTVS carregada com sucesso.")
+	
+    
+
+	
+	gerar_planilha_com_codigos(
+		caminho_planilha_modelo=r"planilhas/planilhaPadrao.xlsx",
+		caminho_csv_codigos=r"planilhas/dados_teste.csv",
+		caminho_saida=r"planilhas/planilha_atualizada.xlsx",
+	)
+	
