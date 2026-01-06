@@ -59,3 +59,4 @@ def iserir_dados():
 		caminho_saida=r"planilhas/planilha_atualizada.xlsx",
 	)
 	
+#qualquer coisa
