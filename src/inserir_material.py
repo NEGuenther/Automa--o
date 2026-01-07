@@ -24,7 +24,7 @@ def encontrar_material(narrativa, materiais):
     return melhor_material if pontuacao > 80 else None  # Retorna o material se a pontuação for maior que 80
 
 # Caminhos dos arquivos
-caminho_dicionario = "DADOS/Dicionario_Materiais.txt"
+caminho_dicionario = "DADOS/Dicionario_Materiais.csv"
 caminho_planilha = "planilha/base_dados_TOTVS.xlsx"
 caminho_saida = "planilha/planilha_atualizada.xlsx"
 
