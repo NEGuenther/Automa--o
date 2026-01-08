@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pandas as pd
 from thefuzz import process, fuzz
 
@@ -44,6 +46,30 @@ def encontrar_normas(narrativa, normas):
     if melhor_material and melhor_material.upper():
         return "material nao informado"
     return melhor_material if pontuacao > 80 else None  # Retorna o material se a pontuação for maior que 80
+
+
+def preencher_normas(caminho_planilha: str | Path, caminho_dicionario: str | Path) -> None:
+    """Preenche a coluna SAP17 com normas encontradas a partir de SAP123."""
+    caminho_planilha = Path(caminho_planilha)
+    normas = carregar_dicionario_normas(str(caminho_dicionario))
+
+    df = pd.read_excel(caminho_planilha)
+    if "SAP123" not in df.columns:
+        print("Aviso: coluna 'SAP123' não encontrada na planilha.")
+        return
+
+    if "SAP17" not in df.columns:
+        df["SAP17"] = None
+
+    for idx in range(2, len(df)):
+        narrativa = df.loc[idx, "SAP123"]
+        df.loc[idx, "SAP17"] = encontrar_normas(narrativa, normas)
+
+    encontrados = df.loc[2:, "SAP17"].notna().sum()
+    print(f"Normas encontradas: {encontrados}")
+
+    df.to_excel(caminho_planilha, index=False)
+    print("SAP17 atualizada e salva na planilha.")
 
 if __name__ == "__main__":
     # Caminhos dos arquivos
