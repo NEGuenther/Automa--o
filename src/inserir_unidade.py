@@ -1,12 +1,12 @@
 import pandas as pd
 
-def inserir_product_group(
+def inserir_unidade(
 	caminho_planilha_atualizada: str,
 	caminho_base_totvs: str,
 ):
-	"""Compara códigos e insere o product group (SAP6) na planilha atualizada."""
+	"""Compara códigos e insere o product group (SAP5) na planilha atualizada."""
 
-	print("Inserindo product group (SAP6)...")
+	print("Inserindo product group (SAP5)...")
 
 	# Ler arquivos de entrada
 	df_planilha_atualizada = pd.read_excel(caminho_planilha_atualizada)
@@ -35,49 +35,49 @@ def inserir_product_group(
 			else df_base_dados_TOTVS.columns[0]
 		)
 
-	# Identificar coluna de product group (Fam Coml)
-	col_product_group = None
+	# Identificar coluna de unidade
+	col_unidade = None
 	for c in df_base_dados_TOTVS.columns:
-		if str(c).strip().lower() == "fam coml":
-			col_product_group = c
+		if str(c).strip().lower() == "un":
+			col_unidade = c
 			break
 	
-	if col_product_group is None:
-		# fallback: tenta procurar por "product group"
-		possiveis_product_groups = [
-			c for c in df_base_dados_TOTVS.columns if "product group" in c.lower() or "fam" in c.lower()
+	if col_unidade is None:
+		# fallback: tenta procurar por "unidade"
+		possiveis_unidades = [
+			c for c in df_base_dados_TOTVS.columns if "unidade" in c.lower()
 		]
-		if possiveis_product_groups:
-			col_product_group = possiveis_product_groups[0]
+		if possiveis_unidades:
+			col_unidade = possiveis_unidades[0]
 		else:
 			raise ValueError(
-				"Não foi encontrada nenhuma coluna de 'Fam Coml' ou 'product group' na baseDadosTOTVS.xlsx. "
+				"Não foi encontrada nenhuma coluna de 'Unidade' na baseDadosTOTVS.xlsx. "
 				"Verifique o nome das colunas."
 			)
 
-	# Criar um mapa codigo -> product group a partir da base TOTVS
-	serie_product_group = (
-		df_base_dados_TOTVS[[col_codigo_base, col_product_group]]
+	# Criar um mapa codigo -> unidade a partir da base TOTVS
+	serie_unidade = (
+		df_base_dados_TOTVS[[col_codigo_base, col_unidade]]
 		.drop_duplicates(subset=[col_codigo_base])
-		.set_index(col_codigo_base)[col_product_group]
+		.set_index(col_codigo_base)[col_unidade]
 	)
 
-	# Preencher/atualizar a coluna "SAP6" na planilha atualizada
+	# Preencher/atualizar a coluna "SAP5" na planilha atualizada
 	# Mantendo as duas primeiras linhas de título intactas
-	col_destino_product_group = "SAP6"
+	col_destino_unidade = "SAP5"
 	primeira_linha_dados = 1  # índices 0 e 1 são títulos
 	df_planilha_atualizada.loc[
 		primeira_linha_dados:,
-		col_destino_product_group,
+		col_destino_unidade,
 	] = df_planilha_atualizada.loc[
 		primeira_linha_dados:,
 		col_codigo_atualizada,
-	].map(serie_product_group)
+	].map(serie_unidade)
 
 	# Estatísticas
-	preenchidas = int(df_planilha_atualizada.loc[primeira_linha_dados:, col_destino_product_group].notna().sum())
+	preenchidas = int(df_planilha_atualizada.loc[primeira_linha_dados:, col_destino_unidade].notna().sum())
 	total_linhas = int(len(df_planilha_atualizada.index) - primeira_linha_dados)
 
-	# Salvar a própria planilha atualizada com a coluna SAP6 preenchida
+	# Salvar a própria planilha atualizada com a coluna SAP5 preenchida
 	df_planilha_atualizada.to_excel(caminho_planilha_atualizada, index=False)
-	print(f"Product group inserido: {preenchidas}/{total_linhas} linhas com SAP6")
+	print(f"Unidade inserida: {preenchidas}/{total_linhas} linhas com SAP5")
