@@ -80,8 +80,23 @@ def inserir_internal_coments(
 		col_codigo_atualizada,
 	].map(serie_narrativa)
 
+	# Verifica se o numero de caracteres ultrapassa o limite de 141 
+	if col_destino_narrativa in df_planilha_atualizada.columns:
+		limite_caracteres = 141 # limite de caracteres
+		df_planilha_atualizada['Num_Chars'] = df_planilha_atualizada[col_destino_narrativa].astype(str).apply(len)
+		ultrapassam_limite = df_planilha_atualizada[df_planilha_atualizada['Num_Chars'] > limite_caracteres]
+		if not ultrapassam_limite.empty:
+			col_destino_narrativa141 = "SAP123"
+			df_planilha_atualizada.loc[
+			primeira_linha_dados:,
+			col_destino_narrativa,
+			] = df_planilha_atualizada.loc[
+				primeira_linha_dados:,
+				col_codigo_atualizada,
+			].map(serie_narrativa)
+		else:
+			print("Todas as entradas estão dentro do limite de caracteres.")
+	   
 	# Salvar a própria planilha atualizada com a coluna SAP123 preenchida
 	df_planilha_atualizada.to_excel(caminho_planilha_atualizada, index=False)
 	print("Coluna SAP123 preenchida com a narrativa na planilha atualizada.")
-
-
