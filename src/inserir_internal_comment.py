@@ -1,23 +1,24 @@
 import pandas as pd
 
 
-def inserir_dados():
-	"""Compara os códigos e insere a narrativa na planilha atualizada.
+def inserir_internal_coments(
+	caminho_planilha_atualizada: str,
+	caminho_base_totvs: str,
+):
+	"""Compara códigos e insere a narrativa na planilha atualizada.
 
-	- Lê planilha_atualizada.xlsx (já gerada pelo passo anterior).
-	- Lê baseDadosTOTVS.xlsx (base com códigos e coluna de narrativa).
-	- Compara o código da primeira coluna da planilha atualizada
-	  com a coluna de código da base TOTVS.
-	- Quando encontrar correspondência, traz o texto da coluna "narrativa"
-	  para uma coluna "narrativa" na planilha atualizada.
+	- Lê a planilha atualizada gerada no passo anterior (caminho informado).
+	- Lê a base TOTVS (caminho informado) com códigos e coluna de narrativa.
+	- Usa a primeira coluna da planilha atualizada como código e cruza com a coluna "item" (ou similar) da base TOTVS.
+	- Preenche a coluna "SAP123" da planilha atualizada com a narrativa correspondente.
 	"""
 
 	# Ler arquivos de entrada
-	df_planilha_atualizada = pd.read_excel(r"planilhas/planilha_atualizada.xlsx")
+	df_planilha_atualizada = pd.read_excel(caminho_planilha_atualizada)
 	print("Planilha Atualizada carregada com sucesso.")
 
 	# A planilha base_dados_TOTVS.xlsx possui o cabeçalho real na 5ª linha (índice 4)
-	df_base_dados_TOTVS = pd.read_excel(r"planilhas/base_dados_TOTVS.xlsx", header=4)
+	df_base_dados_TOTVS = pd.read_excel(caminho_base_totvs, header=4)
 	print("Base de Dados TOTVS carregada com sucesso.")
 
 	# Identificar colunas de código
@@ -69,8 +70,8 @@ def inserir_dados():
 
 	# Preencher/atualizar a coluna "SAP123" na planilha atualizada
 	# Mantendo as duas primeiras linhas de título intactas
-	col_destino_narrativa = "SAP123"
-	primeira_linha_dados = 2  # índices 0 e 1 são títulos copiadas do modelo
+	col_destino_narrativa = "Narrativa"
+	primeira_linha_dados = 2  # índices 0 e 1 são títulos
 	df_planilha_atualizada.loc[
 		primeira_linha_dados:,
 		col_destino_narrativa,
@@ -79,8 +80,8 @@ def inserir_dados():
 		col_codigo_atualizada,
 	].map(serie_narrativa)
 
-	# Salvar a própria planilha_atualizada.xlsx com a coluna SAP123 preenchida
-	df_planilha_atualizada.to_excel(r"planilhas/planilha_atualizada.xlsx", index=False)
-	print("Coluna SAP123 preenchida com a narrativa na planilha_atualizada.xlsx.")
+	# Salvar a própria planilha atualizada com a coluna SAP123 preenchida
+	df_planilha_atualizada.to_excel(caminho_planilha_atualizada, index=False)
+	print("Coluna SAP123 preenchida com a narrativa na planilha atualizada.")
 
 
