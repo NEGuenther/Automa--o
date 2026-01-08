@@ -1,163 +1,222 @@
+"""Pipeline de preparação de planilhas para cargas SAP/TOTVS.
+
+Fluxo principal:
+- Gera planilha base a partir do modelo e CSV de códigos.
+- Enriquecimento com comentários internos, product group e unidade.
+- Preenchimento de colunas derivadas por narrativa: materiais, normas e size dimension.
+- Aplicação de valores fixos e ajustes em narrativas longas.
+"""
+
 import sys
 from pathlib import Path
 
-# Adicionar a pasta src ao caminho de importação
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
 import pandas as pd
+
+# Caminhos base usados em todo o pipeline de planilhas
+BASE_DIR = Path(__file__).resolve().parent.parent
+SRC_DIR = BASE_DIR / "src"
+PLANILHA_MODELO = BASE_DIR / "planilhas/planilhaPadrao.xlsx"
+CSV_CODIGOS = BASE_DIR / "planilhas/dados_teste.csv"
+PLANILHA_SAIDA = BASE_DIR / "planilhas/planilha_atualizada.xlsx"
+BASE_TOTVS = BASE_DIR / "planilhas/base_dados_TOTVS.xlsx"
+DICIONARIO_MATERIAIS = BASE_DIR / "dados/dicionario_materiais.csv"
+DICIONARIO_NORMAS = BASE_DIR / "dados/dicionario_normas.csv"
+DICIONARIO_SIZE_DIMENSION = BASE_DIR / "dados/dicionario_size_dimension.csv"
+
+# Garante que os módulos em src sejam encontrados
+if str(SRC_DIR) not in sys.path:
+	sys.path.insert(0, str(SRC_DIR))
+
 from inserir_codigos_de_itens import gerar_planilha_com_codigos
 from inserir_internal_comment import inserir_internal_coments
+from inserir_unidade import inserir_unidade
 from inserir_traducoes import Traducoes
 from inserir_material import carregar_dicionario, encontrar_material
 from inserir_valores_fixos import inserir_valores_fixos
 from inserir_narrativas import inserir_narrativa
-from inserir_product_group import inserir_internal_coments as inserir_product_group
+from inserir_product_group import inserir_product_group
 from inserir_normas import encontrar_normas, carregar_dicionario_normas
 from inserir_size_dimension import carregar_dicionario_size_dimension, encontrar_size_dimension
 
 
-# 1) Gera a planilha com códigos
+def gerar_planilha_base(modelo: Path, csv_codigos: Path, saida: Path) -> Path:
+	"""Gera a planilha inicial a partir do modelo e do CSV de códigos, se ambos existirem.
 
-modelo = Path("planilhas/planilhaPadrao.xlsx")
-csv_codigos = Path("planilhas/dados_teste.csv")
-saida = Path("planilhas/planilha_atualizada.xlsx")
+	Args:
+		modelo: caminho do arquivo xlsx modelo.
+		csv_codigos: caminho do CSV com códigos para preencher o modelo.
+		saida: caminho desejado para salvar o resultado.
 
-if modelo.exists() and csv_codigos.exists():
-    gerar_planilha_com_codigos(
-    	caminho_planilha_modelo=str(modelo),
-    	caminho_csv_codigos=str(csv_codigos),
-    	caminho_saida=str(saida),
-    )
-    print(f"Planilha base gerada: {saida}")
-else:
-    print("Pulando geração da planilha base")
+	Returns:
+		Path para a planilha (existente ou recém-gerada).
+	"""
+	if not (modelo.exists() and csv_codigos.exists()):
+		print("Pulando geração da planilha base")
+		return saida
 
-# 2) Insere dados (narrativa SAP123, etc.)
-inserir_internal_coments(
-	caminho_planilha_atualizada=r"planilhas/planilha_atualizada.xlsx",
-	caminho_base_totvs=r"planilhas/base_dados_TOTVS.xlsx",
-)
+	gerar_planilha_com_codigos(
+		caminho_planilha_modelo=str(modelo),
+		caminho_csv_codigos=str(csv_codigos),
+		caminho_saida=str(saida),
+	)
+	print(f"Planilha base gerada: {saida}")
+	return saida
 
-# 2.1) Preenche product group (SAP6)
-print("Preenchendo product group (SAP6)...")
-inserir_product_group(
-	caminho_planilha_atualizada=r"planilhas/planilha_atualizada.xlsx",
-	caminho_base_totvs=r"planilhas/base_dados_TOTVS.xlsx",
-)
-print("Product group (SAP6) preenchido.")
 
-# 2.5) Carregar dicionário de materiais e encontrar materiais correspondentes
-print("Processando materiais (matching por narrativa)...")
-materiais = carregar_dicionario(r"dados/dicionario_materiais.csv")
-print(f"Materiais carregados: {len(materiais)} entradas")
+def garantir_planilha_saida(saida: Path) -> Path:
+	"""Garante que há um arquivo de trabalho retornando o caminho válido.
 
-# Carregar a planilha atualizada
-if not saida.exists():
-	if Path("planilhas/planilha_atualizada.xlsx").exists():
-		saida = Path("planilhas/planilha_atualizada.xlsx")
-	else:
-		print("Erro: arquivo de trabalho inexistente: planilhas/planilha_atualizada.xlsx")
-		raise SystemExit(1)
+	Args:
+		saida: caminho esperado para a planilha.
 
-df = pd.read_excel(str(saida))
+	Returns:
+		Caminho existente para a planilha de trabalho.
 
-# Verificar se a coluna SAP123 existe
-if "SAP123" in df.columns:
-	print("Processando correspondências na coluna SAP123...")
-	
-	# Criar a coluna Coluna4 se não existir, inicializar com None
-	if "Coluna4" not in df.columns:
-		df["Coluna4"] = None
-	
-	# Processar apenas da linha 2 em diante (índice 2)
-	for idx in range(2, len(df)):
+	Raises:
+		SystemExit: quando nenhuma planilha válida é encontrada.
+	"""
+	if saida.exists():
+		return saida
+
+	# Fallback para o nome padrão esperado pelo restante das funções
+	fallback = BASE_DIR / "planilhas/planilha_atualizada.xlsx"
+	if fallback.exists():
+		return fallback
+
+	print("Erro: arquivo de trabalho inexistente: planilhas/planilha_atualizada.xlsx")
+	raise SystemExit(1)
+
+
+def atualizar_coluna_por_narrativa(df: pd.DataFrame, coluna_destino: str, linha_inicial: int, busca_fn) -> int:
+	"""Preenche uma coluna baseada na narrativa SAP123 usando a função de busca fornecida.
+
+	Args:
+		df: dataframe carregado da planilha.
+		coluna_destino: coluna a ser preenchida/atualizada.
+		linha_inicial: índice inicial para processamento (pula cabeçalhos ou linhas fixas).
+		busca_fn: função que recebe a narrativa e retorna o valor a ser escrito.
+
+	Returns:
+		Quantidade de valores preenchidos (não nulos) a partir da linha inicial.
+	"""
+	if "SAP123" not in df.columns:
+		print("Aviso: coluna 'SAP123' não encontrada na planilha.")
+		return 0
+
+	if coluna_destino not in df.columns:
+		df[coluna_destino] = None
+
+	for idx in range(linha_inicial, len(df)):
 		narrativa = df.loc[idx, "SAP123"]
-		material = encontrar_material(narrativa, materiais)
-		df.loc[idx, "Coluna4"] = material
-	
-	# Contar quantos materiais foram encontrados (a partir da linha 2)
-	materiais_encontrados = df.loc[2:, "Coluna4"].notna().sum()
-	print(f"Materiais encontrados: {materiais_encontrados}")
-	
-	# Salvar a planilha atualizada
+		df.loc[idx, coluna_destino] = busca_fn(narrativa)
+
+	encontrados = df.loc[linha_inicial:, coluna_destino].notna().sum()
+	return int(encontrados)
+
+
+def processar_materiais(saida: Path) -> None:
+	"""Preenche Coluna4 com materiais correspondentes às narrativas."""
+	print("Processando materiais (matching por narrativa)...")
+	materiais = carregar_dicionario(str(DICIONARIO_MATERIAIS))
+	print(f"Materiais carregados: {len(materiais)} entradas")
+
+	df = pd.read_excel(str(saida))
+	encontrados = atualizar_coluna_por_narrativa(
+		df,
+		coluna_destino="Coluna4",
+		linha_inicial=2,
+		busca_fn=lambda narrativa: encontrar_material(narrativa, materiais),
+	)
+	print(f"Materiais encontrados: {encontrados}")
 	df.to_excel(str(saida), index=False)
 	print("Coluna4 atualizada e salva na planilha.")
-else:
-	print("Aviso: coluna 'SAP123' não encontrada na planilha.")
 
-# 2.6) Carregar dicionário de normas e encontrar normas correspondentes
-print("Processando normas (matching por narrativa)...")
-normas = carregar_dicionario_normas(r"dados/dicionario_normas.csv")
-print(f"Normas carregadas: {len(normas)} entradas")
 
-# Recarregar a planilha
-df = pd.read_excel(str(saida))
+def processar_normas(saida: Path) -> None:
+	"""Preenche SAP17 com normas vinculadas às narrativas."""
+	print("Processando normas (matching por narrativa)...")
+	normas = carregar_dicionario_normas(str(DICIONARIO_NORMAS))
+	print(f"Normas carregadas: {len(normas)} entradas")
 
-# Verificar se a coluna SAP123 existe
-if "SAP123" in df.columns:
-	print("Processando correspondências de normas na coluna SAP123...")
-	
-	# Criar a coluna SAP17 se não existir, inicializar com None
-	if "SAP17" not in df.columns:
-		df["SAP17"] = None
-	
-	# Processar apenas da linha 1 em diante (índice 1)
-	for idx in range(1, len(df)):
-		narrativa = df.loc[idx, "SAP123"]
-		norma = encontrar_normas(narrativa, normas)
-		df.loc[idx, "SAP17"] = norma
-	
-	# Contar quantas normas foram encontradas (a partir da linha 2)
-	normas_encontradas = df.loc[2:, "SAP17"].notna().sum()
-	print(f"Normas encontradas: {normas_encontradas}")
-	
-	# Salvar a planilha atualizada
+	df = pd.read_excel(str(saida))
+	encontrados = atualizar_coluna_por_narrativa(
+		df,
+		coluna_destino="SAP17",
+		linha_inicial=1,
+		busca_fn=lambda narrativa: encontrar_normas(narrativa, normas),
+	)
+	print(f"Normas encontradas: {encontrados}")
 	df.to_excel(str(saida), index=False)
 	print("SAP17 atualizada e salva na planilha.")
-# 2.7) Carregar dicionário de size dimension e encontrar size dimensions correspondentes
-print("Processando size dimensions (matching por narrativa)...")
-size_dimensions = carregar_dicionario_size_dimension(r"dados/dicionario_size_dimension.csv")
-print(f"Size dimensions carregadas: {len(size_dimensions)} entradas")
 
-# Recarregar a planilha
-df = pd.read_excel(str(saida))
 
-# Verificar se a coluna SAP123 existe
-if "SAP123" in df.columns:
-	print("Processando correspondências de size dimension na coluna SAP123...")
-	
-	# Criar a coluna SAP15 se não existir, inicializar com None
-	if "SAP15" not in df.columns:
-		df["SAP15"] = None
-	
-	# Processar apenas da linha 1 em diante (índice 1)
-	for idx in range(1, len(df)):
-		narrativa = df.loc[idx, "SAP123"]
-		size_dim = encontrar_size_dimension(narrativa, size_dimensions)
-		df.loc[idx, "SAP15"] = size_dim
-	
-	# Contar quantas size dimensions foram encontradas (a partir da linha 2)
-	size_dims_encontradas = df.loc[2:, "SAP15"].notna().sum()
-	print(f"Size dimensions encontradas: {size_dims_encontradas}")
-	
-	# Salvar a planilha atualizada
+def processar_size_dimension(saida: Path) -> None:
+	"""Preenche SAP15 com size dimensions encontradas por narrativa."""
+	print("Processando size dimensions (matching por narrativa)...")
+	size_dimensions = carregar_dicionario_size_dimension(str(DICIONARIO_SIZE_DIMENSION))
+	print(f"Size dimensions carregadas: {len(size_dimensions)} entradas")
+
+	df = pd.read_excel(str(saida))
+	encontrados = atualizar_coluna_por_narrativa(
+		df,
+		coluna_destino="SAP15",
+		linha_inicial=1,
+		busca_fn=lambda narrativa: encontrar_size_dimension(narrativa, size_dimensions),
+	)
+	print(f"Size dimensions encontradas: {encontrados}")
 	df.to_excel(str(saida), index=False)
 	print("SAP15 atualizada e salva na planilha.")
-else:
-	print("Aviso: coluna 'SAP123' não encontrada na planilha.")
 
 
-# 3) Insere valores fixos nas colunas SAP10 e SAP14
-print("Aplicando valores fixos em SAP10 e SAP14...")
-inserir_valores_fixos(
-	caminho_planilha_modelo=str(saida),
-	caminho_saida=str(saida),
-)
+def inserir_valores_fixos_planilha(saida: Path) -> None:
+	"""Aplica valores fixos nas colunas SAP10 e SAP14 da planilha de trabalho."""
+	print("Aplicando valores fixos em SAP10 e SAP14...")
+	inserir_valores_fixos(
+		caminho_planilha_modelo=str(saida),
+		caminho_saida=str(saida),
+	)
 
-# 4) Verifica tamanho de SAP123 e atualiza SAP15
-print("Ajustando SAP15 para narrativas maior que 144 caracteres...")
-inserir_narrativa(
-	caminho_planilha_modelo=str(saida),
-	caminho_saida=str(saida),
-)
-print("Atualização de SAP15 concluída.")
+
+def ajustar_narrativas(saida: Path) -> None:
+	"""Atualiza SAP15 quando a narrativa SAP123 excede 141 caracteres."""
+	print("Ajustando SAP15 para narrativas maior que 141 caracteres...")
+	inserir_narrativa(
+		caminho_planilha_modelo=str(saida),
+		caminho_saida=str(saida),
+	)
+	print("Atualização de SAP15 concluída.")
+
+
+def main() -> None:
+	"""Orquestra o pipeline de geração, enriquecimento e ajustes da planilha."""
+	saida = gerar_planilha_base(PLANILHA_MODELO, CSV_CODIGOS, PLANILHA_SAIDA)
+	saida = garantir_planilha_saida(saida)
+
+	inserir_internal_coments(
+		caminho_planilha_atualizada=str(saida),
+		caminho_base_totvs=str(BASE_TOTVS),
+	)
+
+	print("Preenchendo product group...")
+	inserir_product_group(
+		caminho_planilha_atualizada=str(saida),
+		caminho_base_totvs=str(BASE_TOTVS),
+	)
+	print("Product group preenchido.")
+
+	print("Inserindo unidade...")
+	inserir_unidade(
+		caminho_planilha_atualizada=str(saida),
+		caminho_base_totvs=str(BASE_TOTVS),
+	)
+	print("Unidade inserida.")
+
+	processar_materiais(saida)
+	processar_normas(saida)
+	processar_size_dimension(saida)
+	inserir_valores_fixos_planilha(saida)
+	ajustar_narrativas(saida)
+
+
+if __name__ == "__main__":
+	main()

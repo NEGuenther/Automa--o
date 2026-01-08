@@ -41,7 +41,7 @@ def inserir_narrativa(
     exemplos = []
     for linha in range(3, ws.max_row + 1):
         valor = ws.cell(row=linha, column=col_sap123).value
-        if isinstance(valor, str) and len(valor) > 144:
+        if isinstance(valor, str) and len(valor) > 141:
             ws.cell(row=linha, column=col_narrativa).value = "verificar internal comment"
             alteradas += 1
             if len(exemplos) < 5:
