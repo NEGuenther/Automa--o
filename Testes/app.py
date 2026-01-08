@@ -9,6 +9,8 @@ from inserir_codigos_de_itens import gerar_planilha_com_codigos
 from inserir_internal_comment import inserir_internal_coments
 from inserir_traducoes import Traducoes
 from inserir_material import carregar_dicionario, encontrar_material
+from inserir_valores_fixos import inserir_valores_fixos
+from inserir_size_dimension import inserir_size_dimension
 
 
 # 1) Gera a planilha com códigos
@@ -58,3 +60,17 @@ if "SAP123" in df.columns:
 	print("Materiais encontrados e inseridos na Coluna4 com sucesso.")
 else:
 	print("Aviso: A coluna 'SAP123' não foi encontrada na planilha.")
+
+# 3) Insere valores fixos nas colunas SAP10 e SAP1
+inserir_valores_fixos(
+	caminho_planilha_modelo=r"planilhas/planilha_atualizada.xlsx",
+	caminho_saida=r"planilhas/planilha_atualizada.xlsx",
+)
+print("Valores fixos inseridos com sucesso.")
+
+# 4) Verifica tamanho de SAP123 e atualiza SAP15
+inserir_size_dimension(
+	caminho_planilha_modelo=r"planilhas/planilha_atualizada.xlsx",
+	caminho_saida=r"planilhas/planilha_atualizada.xlsx",
+)
+print("Atualização de SAP15 por tamanho aplicada com sucesso.")
