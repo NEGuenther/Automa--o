@@ -55,10 +55,6 @@ def inserir_internal_coments(
 				"Verifique o nome das colunas."
 			)
 
-	print(
-		f"Mapeando product groups -> codigo_atualizada: '{col_codigo_atualizada}', codigo_base: '{col_codigo_base}', product group: '{col_product_group}'"
-	)
-
 	# Criar um mapa codigo -> product group a partir da base TOTVS
 	serie_product_group = (
 		df_base_dados_TOTVS[[col_codigo_base, col_product_group]]
