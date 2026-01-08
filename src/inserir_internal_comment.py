@@ -70,7 +70,7 @@ def inserir_internal_coments(
 
 	# Preencher/atualizar a coluna "SAP123" na planilha atualizada
 	# Mantendo as duas primeiras linhas de título intactas
-	col_destino_narrativa = "SAP123"
+	col_destino_narrativa = "Narrativa"
 	primeira_linha_dados = 2  # índices 0 e 1 são títulos
 	df_planilha_atualizada.loc[
 		primeira_linha_dados:,
@@ -79,6 +79,23 @@ def inserir_internal_coments(
 		primeira_linha_dados:,
 		col_codigo_atualizada,
 	].map(serie_narrativa)
+
+	# Verifica se o numero de caracteres ultrapassa o limite de 141 
+	if col_destino_narrativa in df_planilha_atualizada.columns:
+		limite_caracteres = 141 # limite de caracteres
+		df_planilha_atualizada['Num_Chars'] = df_planilha_atualizada[col_destino_narrativa].astype(str).apply(len)
+		ultrapassam_limite = df_planilha_atualizada[df_planilha_atualizada['Num_Chars'] > limite_caracteres]
+		if not ultrapassam_limite.empty:
+			col_destino_narrativa141 = "SAP123"
+			df_planilha_atualizada.loc[
+			primeira_linha_dados:,
+			col_destino_narrativa141,
+			] = df_planilha_atualizada.loc[
+				primeira_linha_dados:,
+				col_codigo_atualizada,
+			].map(serie_narrativa)
+		else:
+			print("Todas as entradas estão dentro do limite de caracteres.")
 
 	# Estatísticas
 	preenchidas = int(df_planilha_atualizada.loc[primeira_linha_dados:, col_destino_narrativa].notna().sum())
