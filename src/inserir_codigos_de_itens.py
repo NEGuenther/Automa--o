@@ -41,9 +41,9 @@ def gerar_planilha_com_codigos(
 	df_novo.iloc[2:, 0] = df_codigos["CODIGO"].values
 
 	# 7) Definir os nomes das colunas a partir da primeira linha (linha de cabeçalho técnica)
+	# Salvar mantendo as 2 primeiras linhas como dados e usando a primeira como cabeçalho técnico
 	df_novo.columns = df_novo.iloc[0]
-	df_novo = df_novo[1:]  # remove a linha de nomes agora transformada em cabeçalho
-
-	# 8) Salvar planilha atualizada
+	
+	# 8) Salvar planilha atualizada (mantém as 2 linhas de título, já que não removemos)
 	df_novo.to_excel(caminho_saida, index=False, header=True, index_label=False)
 
