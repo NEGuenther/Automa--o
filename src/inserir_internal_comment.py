@@ -15,13 +15,11 @@ def inserir_internal_coments(
 	- Preenche a coluna "SAP123" da planilha atualizada com a narrativa correspondente.
 	"""
 
+	print("Inserindo internal comment (SAP123)...")
+
 	# Ler arquivos de entrada
 	df_planilha_atualizada = pd.read_excel(caminho_planilha_atualizada)
-	print("Planilha Atualizada carregada com sucesso.")
-
-	# A planilha base_dados_TOTVS.xlsx possui o cabeçalho real na 5ª linha (índice 4)
 	df_base_dados_TOTVS = pd.read_excel(caminho_base_totvs, header=4)
-	print("Base de Dados TOTVS carregada com sucesso.")
 
 	# Identificar colunas de código
 	# Na planilha atualizada, usamos a primeira coluna (códigos dos itens)
@@ -59,9 +57,9 @@ def inserir_internal_coments(
 		)
 	col_narrativa = possiveis_narrativas[0]
 
-	print(f"Usando coluna de código na planilha atualizada: {col_codigo_atualizada}")
-	print(f"Usando coluna de código na base TOTVS: {col_codigo_base}")
-	print(f"Usando coluna de narrativa na base TOTVS: {col_narrativa}")
+	print(
+		f"Mapeando narrativas -> codigo_atualizada: '{col_codigo_atualizada}', codigo_base: '{col_codigo_base}', narrativa: '{col_narrativa}'"
+	)
 
 	# Criar um mapa codigo -> narrativa a partir da base TOTVS
 	serie_narrativa = (
@@ -82,9 +80,13 @@ def inserir_internal_coments(
 		col_codigo_atualizada,
 	].map(serie_narrativa)
 
+	# Estatísticas
+	preenchidas = int(df_planilha_atualizada.loc[primeira_linha_dados:, col_destino_narrativa].notna().sum())
+	total_linhas = int(len(df_planilha_atualizada.index) - primeira_linha_dados)
+
 	# Salvar a própria planilha atualizada com a coluna SAP123 preenchida
 	df_planilha_atualizada.to_excel(caminho_planilha_atualizada, index=False)
-	print("Coluna SAP123 preenchida com a narrativa na planilha atualizada.")
+	print(f"Internal comment inserido: {preenchidas}/{total_linhas} linhas com narrativa")
 
 
 def extrair_campos_narrativa(
@@ -190,8 +192,13 @@ def extrair_campos_narrativa(
 	# Remove coluna auxiliar
 	df = df.drop(columns=["Comments_norm"])
 
+	# Resumo
+	n_basic_ok = int((df["Basic material"] != "Verificar").sum()) if "Basic material" in df.columns else 0
+	n_norma_ok = int((df["Norma"] != "Verificar").sum()) if "Norma" in df.columns else 0
+	n_maktx_ok = int((df["MAKTX(PT)"] != "Verificar").sum()) if "MAKTX(PT)" in df.columns else 0
+
 	# Salva de volta na mesma planilha
 	df.to_excel(caminho_planilha_atualizada, index=False)
-	print("Campos extraídos (Basic material, Norma, MAKTX(PT)) e adicionados na planilha.")
+	print(f"Campos extraídos -> Basic material={n_basic_ok}, Norma={n_norma_ok}, MAKTX(PT)={n_maktx_ok}")
 
 
