@@ -1,6 +1,6 @@
 from openpyxl import load_workbook
 
-def inserir_size_dimension(
+def inserir_narrativa(
     caminho_planilha_modelo: str,
     caminho_saida: str,
 ) -> None:

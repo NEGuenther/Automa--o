@@ -2,7 +2,7 @@ import pandas as pd
 from thefuzz import process, fuzz
 
 # Função para carregar o dicionário de materiais do arquivo
-def carregar_dicionario_normas(caminho_dicionario):
+def carregar_dicionario_size_dimension(caminho_dicionario):
     """
     Carrega o dicionário de size dimension a partir de um arquivo de texto.
     :param caminho_dicionario: Caminho para o arquivo de texto contendo os materiais.
@@ -13,11 +13,11 @@ def carregar_dicionario_normas(caminho_dicionario):
     return materiais
 
     # Função para encontrar a melhor norma correspondente
-def encontrar_normas(narrativa, size_dimension):
+def encontrar_size_dimension(narrativa, size_dimension):
     """
     Encontra o size dimension que melhor corresponde à narrativa.
     :param narrativa: A narrativa a ser comparada.
-    :param normas: O conjunto de normas disponíveis.
+    :param size_dimension: O conjunto de size dimensions disponíveis.
     :return: O material correspondente ou None se a pontuação for baixa.
     """
     # Validar se narrativa é string válida
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     caminho_saida = "planilhas/planilha_atualizada.xlsx"
 
     # Carregar o dicionário de materiais
-    materiais = carregar_dicionario_normas(caminho_dicionario)
+    materiais = carregar_dicionario_size_dimension(caminho_dicionario)
 
     # Carregar a planilha
     df = pd.read_excel(caminho_planilha)

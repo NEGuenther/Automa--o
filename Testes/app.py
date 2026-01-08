@@ -10,9 +10,10 @@ from inserir_internal_comment import inserir_internal_coments
 from inserir_traducoes import Traducoes
 from inserir_material import carregar_dicionario, encontrar_material
 from inserir_valores_fixos import inserir_valores_fixos
-from inserir_narrativas import inserir_size_dimension
+from inserir_narrativas import inserir_narrativa
 from inserir_product_group import inserir_internal_coments as inserir_product_group
 from inserir_normas import encontrar_normas, carregar_dicionario_normas
+from inserir_size_dimension import carregar_dicionario_size_dimension, encontrar_size_dimension
 
 
 # 1) Gera a planilha com códigos
@@ -113,8 +114,38 @@ if "SAP123" in df.columns:
 	# Salvar a planilha atualizada
 	df.to_excel(str(saida), index=False)
 	print("SAP17 atualizada e salva na planilha.")
+# 2.7) Carregar dicionário de size dimension e encontrar size dimensions correspondentes
+print("Processando size dimensions (matching por narrativa)...")
+size_dimensions = carregar_dicionario_size_dimension(r"dados/dicionario_size_dimension.csv")
+print(f"Size dimensions carregadas: {len(size_dimensions)} entradas")
+
+# Recarregar a planilha
+df = pd.read_excel(str(saida))
+
+# Verificar se a coluna SAP123 existe
+if "SAP123" in df.columns:
+	print("Processando correspondências de size dimension na coluna SAP123...")
+	
+	# Criar a coluna SAP15 se não existir, inicializar com None
+	if "SAP15" not in df.columns:
+		df["SAP15"] = None
+	
+	# Processar apenas da linha 1 em diante (índice 1)
+	for idx in range(1, len(df)):
+		narrativa = df.loc[idx, "SAP123"]
+		size_dim = encontrar_size_dimension(narrativa, size_dimensions)
+		df.loc[idx, "SAP15"] = size_dim
+	
+	# Contar quantas size dimensions foram encontradas (a partir da linha 2)
+	size_dims_encontradas = df.loc[2:, "SAP15"].notna().sum()
+	print(f"Size dimensions encontradas: {size_dims_encontradas}")
+	
+	# Salvar a planilha atualizada
+	df.to_excel(str(saida), index=False)
+	print("SAP15 atualizada e salva na planilha.")
 else:
 	print("Aviso: coluna 'SAP123' não encontrada na planilha.")
+
 
 # 3) Insere valores fixos nas colunas SAP10 e SAP14
 print("Aplicando valores fixos em SAP10 e SAP14...")
@@ -125,7 +156,7 @@ inserir_valores_fixos(
 
 # 4) Verifica tamanho de SAP123 e atualiza SAP15
 print("Ajustando SAP15 para narrativas maior que 144 caracteres...")
-inserir_size_dimension(
+inserir_narrativa(
 	caminho_planilha_modelo=str(saida),
 	caminho_saida=str(saida),
 )
