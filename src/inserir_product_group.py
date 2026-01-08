@@ -1,18 +1,10 @@
 import pandas as pd
-from unidecode import unidecode
-import re
 
 def inserir_internal_coments(
 	caminho_planilha_atualizada: str,
 	caminho_base_totvs: str,
 ):
-	"""Compara códigos e insere a product group na planilha atualizada.
-
-	- Lê a planilha atualizada gerada.
-	- Lê a base TOTVS (caminho informado) com códigos e coluna de product group.
-	- Usa a primeira coluna da planilha atualizada como código e cruza com a coluna "item" (ou similar) da base TOTVS.
-	- Preenche a coluna "SAP6" da planilha atualizada com o product group correspondente.
-	"""
+	"""Compara códigos e insere o product group (SAP6) na planilha atualizada."""
 
 	print("Inserindo product group (SAP6)...")
 
@@ -24,16 +16,14 @@ def inserir_internal_coments(
 	# Na planilha atualizada, usamos a primeira coluna (códigos dos itens)
 	col_codigo_atualizada = df_planilha_atualizada.columns[0]
 
-	# Na base TOTVS, procuramos uma coluna cujo nome (ignorando maiúsculas/minúsculas)
-	# seja exatamente "SAP6"
+	# Na base TOTVS, a coluna de código costuma ser "item" (mesmo usada para SAP123)
 	col_codigo_base = None
 	for c in df_base_dados_TOTVS.columns:
-		if str(c).strip().lower() == "sap6":
+		if str(c).strip().lower() == "item":
 			col_codigo_base = c
 			break
 
 	if col_codigo_base is None:
-		# fallback: mantém a lógica anterior caso o nome mude
 		possiveis_codigos_base = [
 			c
 			for c in df_base_dados_TOTVS.columns
@@ -79,7 +69,7 @@ def inserir_internal_coments(
 	# Preencher/atualizar a coluna "SAP6" na planilha atualizada
 	# Mantendo as duas primeiras linhas de título intactas
 	col_destino_product_group = "SAP6"
-	primeira_linha_dados = 2  # índices 0 e 1 são títulos
+	primeira_linha_dados = 1  # índices 0 e 1 são títulos
 	df_planilha_atualizada.loc[
 		primeira_linha_dados:,
 		col_destino_product_group,

@@ -45,7 +45,6 @@ inserir_product_group(
 )
 print("Product group (SAP6) preenchido.")
 
-
 # 2.5) Carregar dicionário de materiais e encontrar materiais correspondentes
 print("Processando materiais (matching por narrativa)...")
 materiais = carregar_dicionario(r"dados/dicionario_materiais.csv")
@@ -101,8 +100,8 @@ if "SAP123" in df.columns:
 	if "SAP17" not in df.columns:
 		df["SAP17"] = None
 	
-	# Processar apenas da linha 2 em diante (índice 2)
-	for idx in range(2, len(df)):
+	# Processar apenas da linha 1 em diante (índice 1)
+	for idx in range(1, len(df)):
 		narrativa = df.loc[idx, "SAP123"]
 		norma = encontrar_normas(narrativa, normas)
 		df.loc[idx, "SAP17"] = norma
@@ -123,7 +122,6 @@ inserir_valores_fixos(
 	caminho_planilha_modelo=str(saida),
 	caminho_saida=str(saida),
 )
-print("Valores fixos aplicados.")
 
 # 4) Verifica tamanho de SAP123 e atualiza SAP15
 print("Ajustando SAP15 para narrativas maior que 144 caracteres...")
