@@ -1,5 +1,7 @@
 from openpyxl import load_workbook
 
+__all__ = ["inserir_narrativa", "inserir_size_dimension"]
+
 def inserir_narrativa(
     caminho_planilha_modelo: str,
     caminho_saida: str,
@@ -47,3 +49,7 @@ def inserir_narrativa(
 
     wb.save(caminho_saida)
     print(f"Narrativa atualizada por tamanho: {alteradas} linhas")
+
+
+# Alias para compatibilidade com nome anterior
+inserir_size_dimension = inserir_narrativa
