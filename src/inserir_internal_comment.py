@@ -1,4 +1,6 @@
 import pandas as pd
+from unidecode import unidecode
+import re
 
 
 def inserir_internal_coments(
@@ -83,5 +85,113 @@ def inserir_internal_coments(
 	# Salvar a própria planilha atualizada com a coluna SAP123 preenchida
 	df_planilha_atualizada.to_excel(caminho_planilha_atualizada, index=False)
 	print("Coluna SAP123 preenchida com a narrativa na planilha atualizada.")
+
+
+def extrair_campos_narrativa(
+	caminho_planilha_atualizada: str,
+	caminho_dicionario_excel: str,
+	caminho_txt_materiais: str,
+	caminho_txt_normas: str,
+	caminho_txt_nome_pt: str,
+	coluna_narrativa: str | None = None,
+):
+	"""Extrai 3 campos a partir da narrativa usando dicionários.
+
+	Campos gerados:
+	- "Basic material" (lista de termos encontrados nos materiais)
+	- "Norma" (lista de normas encontradas)
+	- "MAKTX(PT)" (primeiro nome de material encontrado)
+
+	Parâmetros:
+	- caminho_planilha_atualizada: Excel já gerado no fluxo
+	- caminho_dicionario_excel: Excel com traduções (usado aqui só para normalização opcional)
+	- caminho_txt_materiais: arquivo TXT com termos de materiais (linhas; pode conter abreviações no formato "ABV=EXPANSO")
+	- caminho_txt_normas: arquivo TXT com termos de normas
+	- caminho_txt_nome_pt: arquivo TXT com nomes de material em PT
+	- coluna_narrativa: nome da coluna com a narrativa; se None, tenta detectar entre ["Internal Comments", "Internal comment (narrative)", "SAP123"]
+	"""
+
+	# Carrega planilha
+	df = pd.read_excel(caminho_planilha_atualizada)
+
+	# Detecta coluna de narrativa, se não informada
+	if coluna_narrativa is None:
+		possiveis = ["Internal Comments", "Internal comment (narrative)", "SAP123"]
+		coluna_narrativa = next((c for c in possiveis if c in df.columns), None)
+		if coluna_narrativa is None:
+			raise ValueError(
+				"Não foi possível detectar a coluna de narrativa. Informe explicitamente via 'coluna_narrativa' ou garanta que exista uma das colunas: "
+				+ ", ".join(possiveis)
+			)
+
+	# Carrega dicionário Excel (mantém como referência; não obrigatório para extração)
+	try:
+		df_tr = pd.read_excel(caminho_dicionario_excel)
+	except Exception:
+		df_tr = None
+
+	def limpar_texto(txt):
+		if not isinstance(txt, str):
+			txt = str(txt)
+		return (
+			txt.replace("\xa0", " ")
+			   .replace("\ufeff", "")
+			   .replace("\u200b", "")
+			   .strip()
+		)
+
+	# Carrega e prepara listas/abreviações dos TXT
+	def carregar_txt_categorias(path):
+		buscas = []
+		abrevs = {}
+		with open(path, "r", encoding="utf-8") as f:
+			for linha in f:
+				linha = limpar_texto(linha)
+				if not linha:
+					continue
+				if "=" in linha:
+					chave, valor = linha.split("=", 1)
+					abrevs[unidecode(chave.upper())] = unidecode(valor.upper())
+				else:
+					buscas.append(unidecode(linha.upper()))
+		buscas.sort(key=len, reverse=True)
+		return buscas, abrevs
+
+	buscas_material, abrevs_material = carregar_txt_categorias(caminho_txt_materiais)
+	buscas_normas, abrevs_normas = carregar_txt_categorias(caminho_txt_normas)
+	buscas_nome_pt, abrevs_nome_pt = carregar_txt_categorias(caminho_txt_nome_pt)
+
+	# Normaliza comentário e substitui abreviações
+	def normalizar_comment(comment):
+		comment_norm = unidecode(limpar_texto(comment).upper())
+		for abreviacao, completo in {**abrevs_material, **abrevs_normas, **abrevs_nome_pt}.items():
+			pattern = r"\b" + re.escape(abreviacao) + r"\b"
+			comment_norm = re.sub(pattern, completo, comment_norm)
+		return comment_norm
+
+	df["Comments_norm"] = df[coluna_narrativa].astype(str).apply(normalizar_comment)
+
+	# Busca termos usando correspondência de palavra inteira
+	def extrair_termos(comment, buscas, apenas_um=False):
+		encontrados = []
+		for termo in buscas:
+			if re.search(rf"\b{re.escape(termo)}\b", comment):
+				if apenas_um:
+					return termo
+				if termo not in encontrados:
+					encontrados.append(termo)
+		return ", ".join(encontrados) if encontrados else "Verificar"
+
+	# Aplica extrações
+	df["Basic material"] = df["Comments_norm"].apply(lambda c: extrair_termos(c, buscas_material))
+	df["Norma"] = df["Comments_norm"].apply(lambda c: extrair_termos(c, buscas_normas))
+	df["MAKTX(PT)"] = df["Comments_norm"].apply(lambda c: extrair_termos(c, buscas_nome_pt, apenas_um=True))
+
+	# Remove coluna auxiliar
+	df = df.drop(columns=["Comments_norm"])
+
+	# Salva de volta na mesma planilha
+	df.to_excel(caminho_planilha_atualizada, index=False)
+	print("Campos extraídos (Basic material, Norma, MAKTX(PT)) e adicionados na planilha.")
 
 
