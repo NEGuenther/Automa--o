@@ -10,8 +10,9 @@ from inserir_internal_comment import inserir_internal_coments
 from inserir_traducoes import Traducoes
 from inserir_material import carregar_dicionario, encontrar_material
 from inserir_valores_fixos import inserir_valores_fixos
-from inserir_size_dimension import inserir_size_dimension
+from inserir_narrativas import inserir_size_dimension
 from inserir_product_group import inserir_internal_coments as inserir_product_group
+from inserir_normas import encontrar_normas, carregar_dicionario_normas
 
 
 # 1) Gera a planilha com códigos
@@ -81,6 +82,38 @@ if "SAP123" in df.columns:
 	# Salvar a planilha atualizada
 	df.to_excel(str(saida), index=False)
 	print("Coluna4 atualizada e salva na planilha.")
+else:
+	print("Aviso: coluna 'SAP123' não encontrada na planilha.")
+
+# 2.6) Carregar dicionário de normas e encontrar normas correspondentes
+print("Processando normas (matching por narrativa)...")
+normas = carregar_dicionario_normas(r"dados/dicionario_normas.csv")
+print(f"Normas carregadas: {len(normas)} entradas")
+
+# Recarregar a planilha
+df = pd.read_excel(str(saida))
+
+# Verificar se a coluna SAP123 existe
+if "SAP123" in df.columns:
+	print("Processando correspondências de normas na coluna SAP123...")
+	
+	# Criar a coluna SAP17 se não existir, inicializar com None
+	if "SAP17" not in df.columns:
+		df["SAP17"] = None
+	
+	# Processar apenas da linha 2 em diante (índice 2)
+	for idx in range(2, len(df)):
+		narrativa = df.loc[idx, "SAP123"]
+		norma = encontrar_normas(narrativa, normas)
+		df.loc[idx, "SAP17"] = norma
+	
+	# Contar quantas normas foram encontradas (a partir da linha 2)
+	normas_encontradas = df.loc[2:, "SAP17"].notna().sum()
+	print(f"Normas encontradas: {normas_encontradas}")
+	
+	# Salvar a planilha atualizada
+	df.to_excel(str(saida), index=False)
+	print("SAP17 atualizada e salva na planilha.")
 else:
 	print("Aviso: coluna 'SAP123' não encontrada na planilha.")
 
