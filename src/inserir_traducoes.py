@@ -2,7 +2,7 @@ import pandas as pd
 from thefuzz import process, fuzz
 
 class Traducoes:
-    def __init__(self, caminho_narrativas, caminho_traducoes, coluna_narrativa="narrativa", coluna_portugues="portugues"):
+    def __init__(self, caminho_narrativas, caminho_traducoes, coluna_narrativa="Descrição", coluna_portugues="SAP1"):
         """
         Inicializa a classe com as tabelas de narrativas e traduções.
         :param caminho_narrativas: Caminho para o arquivo da tabela de narrativas (Excel ou CSV).
@@ -67,7 +67,7 @@ class Traducoes:
 
         return traducoes_por_idioma
 
-    def processar_narrativas(self):
+    def processar_descricao(self):
         """
         Processa todas as narrativas e adiciona as melhores traduções para cada idioma.
         """
