@@ -75,6 +75,14 @@ No diretório raiz do projeto:
 python main/app.py
 ```
 
+## Relatório de execução
+
+Ao executar o pipeline, é gerado/atualizado um relatório em:
+
+- `logs/relatorio_execucao.json`
+
+Esse arquivo registra data/hora, ambiente e métricas por etapa (ex.: quantos itens foram preenchidos em cada coluna).
+
 ---
 
 ## Layout da planilha (importante)

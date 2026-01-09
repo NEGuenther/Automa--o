@@ -87,8 +87,10 @@ def inserir_internal_coments(
 			df_planilha_atualizada[col] = df_planilha_atualizada[col].astype("object")
 		df_planilha_atualizada.loc[primeira_linha_dados:, col] = valores_narrativa
 
-	# Estatísticas
-	preenchidas = int(df_planilha_atualizada.loc[primeira_linha_dados:, col_destino_sap123].notna().sum())
+	# Estatísticas (considera vazio e 'nan' como não preenchido)
+	serie = df_planilha_atualizada.loc[primeira_linha_dados:, col_destino_sap123]
+	serie_txt = serie.astype(str).str.strip().str.lower()
+	preenchidas = int((serie.notna() & (serie_txt != "") & (serie_txt != "nan")).sum())
 	total_linhas = int(len(df_planilha_atualizada.index) - primeira_linha_dados)
 
 	# Garante que colunas auxiliares não fiquem no arquivo final

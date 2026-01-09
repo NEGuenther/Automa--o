@@ -1,0 +1,124 @@
+{
+  "run_started_at": "2026-01-09T12:25:15-03:00",
+  "environment": {
+    "python": "3.13.9",
+    "platform": "Windows-11-10.0.22631-SP0"
+  },
+  "paths": {
+    "modelo": "C:\\Users\\nickolas.guenther\\Documents\\GitHub\\Automa--o\\planilhas\\planilha_padrao.xlsx",
+    "csv_codigos": "C:\\Users\\nickolas.guenther\\Documents\\GitHub\\Automa--o\\dados\\dados_teste.csv",
+    "base_totvs": "C:\\Users\\nickolas.guenther\\Documents\\GitHub\\Automa--o\\planilhas\\base_dados_TOTVS.xlsx",
+    "saida": "C:\\Users\\nickolas.guenther\\Documents\\GitHub\\Automa--o\\planilhas\\planilha_atualizada.xlsx",
+    "relatorio": "C:\\Users\\nickolas.guenther\\Documents\\GitHub\\Automa--o\\logs\\relatorio_execucao.json"
+  },
+  "steps": [
+    {
+      "name": "gerar_planilha_base",
+      "started_at": "2026-01-09T12:25:15-03:00",
+      "status": "ok",
+      "metrics": {
+        "saida_existe": true,
+        "linhas_csv_codigos": 183
+      },
+      "duration_seconds": 0.045,
+      "finished_at": "2026-01-09T12:25:15-03:00"
+    },
+    {
+      "name": "inserir_internal_comment",
+      "started_at": "2026-01-09T12:25:15-03:00",
+      "status": "ok",
+      "metrics": {
+        "sap123_preenchidos": 173
+      },
+      "duration_seconds": 40.41,
+      "finished_at": "2026-01-09T12:25:55-03:00"
+    },
+    {
+      "name": "inserir_product_group",
+      "started_at": "2026-01-09T12:25:55-03:00",
+      "status": "ok",
+      "metrics": {
+        "sap6_preenchidos": 90
+      },
+      "duration_seconds": 40.454,
+      "finished_at": "2026-01-09T12:26:36-03:00"
+    },
+    {
+      "name": "inserir_unidade",
+      "started_at": "2026-01-09T12:26:36-03:00",
+      "status": "ok",
+      "metrics": {
+        "sap5_preenchidos": 183
+      },
+      "duration_seconds": 37.889,
+      "finished_at": "2026-01-09T12:27:13-03:00"
+    },
+    {
+      "name": "processar_materiais",
+      "started_at": "2026-01-09T12:27:13-03:00",
+      "status": "ok",
+      "metrics": {
+        "coluna4_preenchidos": 173
+      },
+      "duration_seconds": 0.384,
+      "finished_at": "2026-01-09T12:27:14-03:00"
+    },
+    {
+      "name": "processar_normas",
+      "started_at": "2026-01-09T12:27:14-03:00",
+      "status": "ok",
+      "metrics": {
+        "sap17_preenchidos": 173
+      },
+      "duration_seconds": 0.336,
+      "finished_at": "2026-01-09T12:27:14-03:00"
+    },
+    {
+      "name": "processar_size_dimension",
+      "started_at": "2026-01-09T12:27:14-03:00",
+      "status": "ok",
+      "metrics": {
+        "sap15_preenchidos": 173
+      },
+      "duration_seconds": 0.544,
+      "finished_at": "2026-01-09T12:27:15-03:00"
+    },
+    {
+      "name": "processar_traducoes",
+      "started_at": "2026-01-09T12:27:15-03:00",
+      "status": "ok",
+      "metrics": {
+        "sap1_preenchidos": 139,
+        "sap2_preenchidos": 139,
+        "sap3_preenchidos": 139,
+        "coluna32_preenchidos": 139
+      },
+      "duration_seconds": 42.132,
+      "finished_at": "2026-01-09T12:27:57-03:00"
+    },
+    {
+      "name": "inserir_valores_fixos",
+      "started_at": "2026-01-09T12:27:57-03:00",
+      "status": "ok",
+      "metrics": {
+        "sap10_igual_10": 183,
+        "sap14_igual_NDB": 183
+      },
+      "duration_seconds": 0.103,
+      "finished_at": "2026-01-09T12:27:57-03:00"
+    },
+    {
+      "name": "ajustar_narrativas",
+      "started_at": "2026-01-09T12:27:57-03:00",
+      "status": "ok",
+      "metrics": {
+        "narrativa_marcada": 43
+      },
+      "duration_seconds": 0.076,
+      "finished_at": "2026-01-09T12:27:57-03:00"
+    }
+  ],
+  "status": "ok",
+  "run_finished_at": "2026-01-09T12:27:57-03:00",
+  "duration_seconds": 162.373
+}
