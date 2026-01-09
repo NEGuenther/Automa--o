@@ -8,9 +8,13 @@ def gerar_planilha_com_codigos(
 ) -> None:
 	"""Gera uma nova planilha Excel preenchendo apenas a coluna de códigos.
 
-	- Mantém as DUAS primeiras linhas iguais à planilha modelo
-	  (ex.: linha 1 = "SAP123", linha 2 = "Internal comment (narrative)").
-	- A partir da TERCEIRA linha, preenche só a coluna de código com os valores do CSV.
+	Layout esperado do modelo:
+	- Excel linha 1: cabeçalho técnico (vira o header do arquivo de saída)
+	- Excel linha 2: linha descritiva (vira a primeira linha de dados / df index 0)
+
+	Saída:
+	- Mantém a linha descritiva.
+	- A partir da Excel linha 3 (df index 1), preenche a primeira coluna com os códigos do CSV.
 	"""
 	# 1) Ler planilha padrão (modelo) e CSV de códigos
 	# Modelo esperado:

@@ -4,9 +4,9 @@ def inserir_unidade(
 	caminho_planilha_atualizada: str,
 	caminho_base_totvs: str,
 ):
-	"""Compara códigos e insere o product group (SAP5) na planilha atualizada."""
+	"""Compara códigos e insere a unidade de medida (SAP5) na planilha atualizada."""
 
-	print("Inserindo product group (SAP5)...")
+	print("Inserindo unidade (SAP5)...")
 
 	# Ler arquivos de entrada
 	df_planilha_atualizada = pd.read_excel(caminho_planilha_atualizada)

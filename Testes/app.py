@@ -155,13 +155,13 @@ def inserir_valores_fixos_planilha(saida: Path) -> None:
 
 
 def ajustar_narrativas(saida: Path) -> None:
-	"""Atualiza SAP15 quando a narrativa SAP123 excede 141 caracteres."""
-	print("Ajustando SAP15 para narrativas maior que 141 caracteres...")
+	"""Marca a coluna 'Narrativa' quando SAP123 excede 141 caracteres."""
+	print("Ajustando coluna 'Narrativa' para SAP123 > 141 caracteres...")
 	inserir_narrativa(
 		caminho_planilha_modelo=str(saida),
 		caminho_saida=str(saida),
 	)
-	print("Atualização de SAP15 concluída.")
+	print("Atualização de 'Narrativa' concluída.")
 
 
 def processar_traducoes(saida: Path) -> None:

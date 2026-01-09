@@ -5,9 +5,9 @@ def inserir_valores_fixos(
     caminho_saida: str,
 ) -> None:
     """
-    Insere valores fixos nas colunas SAP10 e SAP1
+    Insere valores fixos nas colunas SAP10 e SAP14
     - SAP10: valor "10" em linhas com código na primeira coluna
-    - SAP1: valor "NDB" em linhas com código na primeira coluna
+    - SAP14: valor "NDB" em linhas com código na primeira coluna
     
     :param caminho_planilha_modelo: Caminho da planilha de entrada
     :param caminho_saida: Caminho onde a planilha será salva
