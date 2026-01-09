@@ -65,7 +65,7 @@ def preencher_materiais(caminho_planilha: str | Path, caminho_dicionario: str | 
     if "Coluna4" not in df.columns:
         df["Coluna4"] = None
 
-    for idx in range(2, len(df)):
+    for idx in range(1, len(df)):
         narrativa = df.loc[idx, "SAP123"]
         df.loc[idx, "Coluna4"] = encontrar_material(narrativa, materiais)
 

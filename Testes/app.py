@@ -15,14 +15,20 @@ import pandas as pd
 # Caminhos base usados em todo o pipeline de planilhas
 BASE_DIR = Path(__file__).resolve().parent.parent
 SRC_DIR = BASE_DIR / "src"
-PLANILHA_MODELO = BASE_DIR / "planilhas/planilhaPadrao.xlsx"
-CSV_CODIGOS = BASE_DIR / "planilhas/dados_teste.csv"
+PLANILHA_MODELO = BASE_DIR / "planilhas/planilha_padrao.xlsx"
+CSV_CODIGOS = BASE_DIR / "dados/dados_teste.csv"
 PLANILHA_SAIDA = BASE_DIR / "planilhas/planilha_atualizada.xlsx"
 BASE_TOTVS = BASE_DIR / "planilhas/base_dados_TOTVS.xlsx"
 DICIONARIO_MATERIAIS = BASE_DIR / "dados/dicionario_materiais.csv"
 DICIONARIO_NORMAS = BASE_DIR / "dados/dicionario_normas.csv"
 DICIONARIO_SIZE_DIMENSION = BASE_DIR / "dados/dicionario_size_dimension.csv"
 DICIONARIO_TRADUCOES = BASE_DIR / "dados/dicionario.xlsx"
+
+# A planilha gerada tem:
+# - linha 1: header
+# - linha 2: linha descritiva (vira df index 0)
+# - itens a partir da linha 3 (vira df index 1)
+PRIMEIRA_LINHA_ITENS_DF = 1
 
 # Garante que os módulos em src sejam encontrados
 if str(SRC_DIR) not in sys.path:
@@ -41,16 +47,7 @@ from inserir_size_dimension import carregar_dicionario_size_dimension, encontrar
 
 
 def gerar_planilha_base(modelo: Path, csv_codigos: Path, saida: Path) -> Path:
-	"""Gera a planilha inicial a partir do modelo e do CSV de códigos, se ambos existirem.
-
-	Args:
-		modelo: caminho do arquivo xlsx modelo.
-		csv_codigos: caminho do CSV com códigos para preencher o modelo.
-		saida: caminho desejado para salvar o resultado.
-
-	Returns:
-		Path para a planilha (existente ou recém-gerada).
-	"""
+	"""Gera a planilha inicial a partir do modelo e do CSV de códigos, se ambos existirem."""
 	if not (modelo.exists() and csv_codigos.exists()):
 		print("Pulando geração da planilha base")
 		return saida
@@ -65,21 +62,10 @@ def gerar_planilha_base(modelo: Path, csv_codigos: Path, saida: Path) -> Path:
 
 
 def garantir_planilha_saida(saida: Path) -> Path:
-	"""Garante que há um arquivo de trabalho retornando o caminho válido.
-
-	Args:
-		saida: caminho esperado para a planilha.
-
-	Returns:
-		Caminho existente para a planilha de trabalho.
-
-	Raises:
-		SystemExit: quando nenhuma planilha válida é encontrada.
-	"""
+	"""Garante que há um arquivo de trabalho retornando o caminho válido."""
 	if saida.exists():
 		return saida
 
-	# Fallback para o nome padrão esperado pelo restante das funções
 	fallback = BASE_DIR / "planilhas/planilha_atualizada.xlsx"
 	if fallback.exists():
 		return fallback
@@ -89,17 +75,7 @@ def garantir_planilha_saida(saida: Path) -> Path:
 
 
 def atualizar_coluna_por_narrativa(df: pd.DataFrame, coluna_destino: str, linha_inicial: int, busca_fn) -> int:
-	"""Preenche uma coluna baseada na narrativa SAP123 usando a função de busca fornecida.
-
-	Args:
-		df: dataframe carregado da planilha.
-		coluna_destino: coluna a ser preenchida/atualizada.
-		linha_inicial: índice inicial para processamento (pula cabeçalhos ou linhas fixas).
-		busca_fn: função que recebe a narrativa e retorna o valor a ser escrito.
-
-	Returns:
-		Quantidade de valores preenchidos (não nulos) a partir da linha inicial.
-	"""
+	"""Preenche uma coluna baseada na narrativa SAP123 usando a função de busca fornecida."""
 	if "SAP123" not in df.columns:
 		print("Aviso: coluna 'SAP123' não encontrada na planilha.")
 		return 0
@@ -125,7 +101,7 @@ def processar_materiais(saida: Path) -> None:
 	encontrados = atualizar_coluna_por_narrativa(
 		df,
 		coluna_destino="Coluna4",
-		linha_inicial=2,
+		linha_inicial=PRIMEIRA_LINHA_ITENS_DF,
 		busca_fn=lambda narrativa: encontrar_material(narrativa, materiais),
 	)
 	print(f"Materiais encontrados: {encontrados}")
@@ -143,7 +119,7 @@ def processar_normas(saida: Path) -> None:
 	encontrados = atualizar_coluna_por_narrativa(
 		df,
 		coluna_destino="SAP17",
-		linha_inicial=1,
+		linha_inicial=PRIMEIRA_LINHA_ITENS_DF,
 		busca_fn=lambda narrativa: encontrar_normas(narrativa, normas),
 	)
 	print(f"Normas encontradas: {encontrados}")
@@ -161,7 +137,7 @@ def processar_size_dimension(saida: Path) -> None:
 	encontrados = atualizar_coluna_por_narrativa(
 		df,
 		coluna_destino="SAP15",
-		linha_inicial=1,
+		linha_inicial=PRIMEIRA_LINHA_ITENS_DF,
 		busca_fn=lambda narrativa: encontrar_size_dimension(narrativa, size_dimensions),
 	)
 	print(f"Size dimensions encontradas: {encontrados}")
@@ -189,11 +165,7 @@ def ajustar_narrativas(saida: Path) -> None:
 
 
 def processar_traducoes(saida: Path) -> None:
-	"""Processa traduções das descrições de produtos.
-	
-	Chama a função do módulo inserir_traducoes para preencher as colunas
-	SAP1, SAP2, SAP3 e Coluna32 com traduções em português, inglês, espanhol e alemão.
-	"""
+	"""Processa traduções das descrições de produtos."""
 	inserir_traducoes(
 		caminho_planilha_atualizada=str(saida),
 		caminho_base_totvs=str(BASE_TOTVS),

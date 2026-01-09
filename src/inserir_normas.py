@@ -61,7 +61,7 @@ def preencher_normas(caminho_planilha: str | Path, caminho_dicionario: str | Pat
     if "SAP17" not in df.columns:
         df["SAP17"] = None
 
-    for idx in range(2, len(df)):
+    for idx in range(1, len(df)):
         narrativa = df.loc[idx, "SAP123"]
         df.loc[idx, "SAP17"] = encontrar_normas(narrativa, normas)
 

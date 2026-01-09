@@ -1,4 +1,5 @@
 from openpyxl import load_workbook
+import re
 
 __all__ = ["inserir_narrativa", "inserir_size_dimension"]
 
@@ -27,7 +28,7 @@ def inserir_narrativa(
             valor = celula.value
             if valor is None:
                 continue
-            nome = str(valor).replace(" ", "").upper()
+            nome = re.sub(r"\s+", "", str(valor)).upper()
             if nome == "SAP123":
                 col_sap123 = celula.column
             elif nome == "NARRATIVA":

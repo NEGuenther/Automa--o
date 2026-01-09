@@ -1,9 +1,9 @@
 import pandas as pd
 
 def LerPlanilhaPadrao():
-    df_planilhaP = pd.read_excel(r"planilhas/planilhaPadrao.xlsx")
+    return pd.read_excel(r"planilhas/planilha_padrao.xlsx")
 
 def LerPlanilhaAtualizada():
-    df_planilhaA = pd.read_excel(r"planilhas/panilha_atualizada.xlsx")
+    return pd.read_excel(r"planilhas/planilha_atualizada.xlsx")
 
 

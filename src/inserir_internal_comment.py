@@ -69,36 +69,28 @@ def inserir_internal_coments(
 	)
 
 	# Preencher/atualizar a coluna "SAP123" na planilha atualizada
-	# Mantendo as duas primeiras linhas de título intactas
-	col_destino_narrativa = "Narrativa"
-	primeira_linha_dados = 2  # índices 0 e 1 são títulos
-	df_planilha_atualizada.loc[
-		primeira_linha_dados:,
-		col_destino_narrativa,
-	] = df_planilha_atualizada.loc[
-		primeira_linha_dados:,
-		col_codigo_atualizada,
-	].map(serie_narrativa)
+	# Planilha gerada: linha 1 = cabeçalho; primeira linha de dados (índice 0) é descritiva.
+	# Itens começam a partir do índice 1.
+	primeira_linha_dados = 1
 
-	# Verifica se o numero de caracteres ultrapassa o limite de 141 
-	if col_destino_narrativa in df_planilha_atualizada.columns:
-		limite_caracteres = 141 # limite de caracteres
-		num_chars = df_planilha_atualizada[col_destino_narrativa].astype(str).str.len()
-		ultrapassam_limite = df_planilha_atualizada[num_chars > limite_caracteres]
-		if not ultrapassam_limite.empty:
-			col_destino_narrativa141 = "SAP123"
-			df_planilha_atualizada.loc[
-			primeira_linha_dados:,
-			col_destino_narrativa141,
-			] = df_planilha_atualizada.loc[
-				primeira_linha_dados:,
-				col_codigo_atualizada,
-			].map(serie_narrativa)
-		else:
-			print("Todas as entradas estão dentro do limite de caracteres.")
+	# Destino principal: SAP123 (internal comment)
+	col_destino_sap123 = "SAP123" if "SAP123" in df_planilha_atualizada.columns else None
+	if col_destino_sap123 is None:
+		raise ValueError("A coluna 'SAP123' não foi encontrada na planilha atualizada.")
+
+	valores_narrativa = df_planilha_atualizada.loc[primeira_linha_dados:, col_codigo_atualizada].map(serie_narrativa)
+	df_planilha_atualizada.loc[primeira_linha_dados:, col_destino_sap123] = valores_narrativa
+
+	# Se existir alguma coluna de narrativa (com quebras de linha/espacos), preencher também
+	colunas_narrativa = [c for c in df_planilha_atualizada.columns if str(c).strip().lower() == "narrativa"]
+	for col in colunas_narrativa:
+		# Garante dtype compatível para strings
+		if df_planilha_atualizada[col].dtype != object:
+			df_planilha_atualizada[col] = df_planilha_atualizada[col].astype("object")
+		df_planilha_atualizada.loc[primeira_linha_dados:, col] = valores_narrativa
 
 	# Estatísticas
-	preenchidas = int(df_planilha_atualizada.loc[primeira_linha_dados:, col_destino_narrativa].notna().sum())
+	preenchidas = int(df_planilha_atualizada.loc[primeira_linha_dados:, col_destino_sap123].notna().sum())
 	total_linhas = int(len(df_planilha_atualizada.index) - primeira_linha_dados)
 
 	# Garante que colunas auxiliares não fiquem no arquivo final

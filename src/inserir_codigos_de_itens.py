@@ -12,38 +12,34 @@ def gerar_planilha_com_codigos(
 	  (ex.: linha 1 = "SAP123", linha 2 = "Internal comment (narrative)").
 	- A partir da TERCEIRA linha, preenche só a coluna de código com os valores do CSV.
 	"""
-
 	# 1) Ler planilha padrão (modelo) e CSV de códigos
+	# Modelo esperado:
+	# - linha 1: cabeçalhos técnicos (será o header do Excel)
+	# - linha 2: descrições/linha descritiva (fica como primeira linha de dados)
 	df_planilha = pd.read_excel(caminho_planilha_modelo, header=None)
 	df_codigos = pd.read_csv(caminho_csv_codigos, header=None, names=["CODIGO"])
 
-	# 2) Separar as duas primeiras linhas (títulos) e a linha-modelo de dados
-	#    df_planilha tem exatamente 2 linhas no seu modelo atual
-	linhas_titulo = df_planilha.iloc[:2].copy()
-	linha_modelo_dados = df_planilha.iloc[1].copy()  # usa a segunda linha como modelo de dados
+	if len(df_planilha) < 2:
+		raise ValueError("A planilha modelo precisa ter pelo menos 2 linhas (header + linha descritiva).")
 
-	# 3) Criar as linhas de dados (a partir da terceira linha da nova planilha)
+	headers = df_planilha.iloc[0].tolist()
+	linha_descritiva = df_planilha.iloc[1].copy()
+
+	# 2) Criar as linhas de dados (a partir da terceira linha da planilha Excel:
+	#    1ª linha = header, 2ª linha = descritiva)
 	quantidade_codigos = len(df_codigos)
-	df_dados = pd.concat(
-		[linha_modelo_dados.to_frame().T] * quantidade_codigos,
-		ignore_index=True,
-	)
+	df_dados = pd.concat([linha_descritiva.to_frame().T] * quantidade_codigos, ignore_index=True)
 
-	# 4) Montar o novo DataFrame: 2 linhas de título + linhas de dados
-	df_novo = pd.concat([linhas_titulo, df_dados], ignore_index=True)
+	# 3) Limpar todas as colunas exceto a de código, e preencher os códigos
+	colunas_outros = [c for c in df_dados.columns if c != 0]  # coluna 0 é a de código no modelo
+	df_dados.loc[:, colunas_outros] = ""
+	df_dados.iloc[:, 0] = df_codigos["CODIGO"].values
 
-	# 5) Deixar todas as outras colunas vazias a partir da terceira linha
-	coluna_codigo = nome_coluna_codigo
-	colunas_outros = [c for c in df_novo.columns if c != 0]  # coluna 0 é a de código no modelo
-	df_novo.iloc[2:, colunas_outros] = ""
+	# 4) Montar o DataFrame final: 1ª linha de dados = descritiva + linhas com códigos
+	df_final = pd.concat([linha_descritiva.to_frame().T, df_dados], ignore_index=True)
+	# Usar a primeira linha do modelo como cabeçalho
+	df_final.columns = headers
 
-	# 6) Preencher a coluna de código a partir da terceira linha
-	df_novo.iloc[2:, 0] = df_codigos["CODIGO"].values
-
-	# 7) Definir os nomes das colunas a partir da primeira linha (linha de cabeçalho técnica)
-	# Salvar mantendo as 2 primeiras linhas como dados e usando a primeira como cabeçalho técnico
-	df_novo.columns = df_novo.iloc[0]
-	
-	# 8) Salvar planilha atualizada (mantém as 2 linhas de título, já que não removemos)
-	df_novo.to_excel(caminho_saida, index=False, header=True, index_label=False)
+	# 5) Salvar a planilha sem duplicar o header como linha de dados
+	df_final.to_excel(caminho_saida, index=False, header=True)
 
