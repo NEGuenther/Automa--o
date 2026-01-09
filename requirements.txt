@@ -1,7 +1,3 @@
 pandas>=2.2
 openpyxl>=3.1
 thefuzz>=0.22
-Unidecode>=1.3
-
-# Opcional (melhora performance do thefuzz)
-python-Levenshtein>=0.23

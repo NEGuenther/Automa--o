@@ -7,7 +7,7 @@ Este projeto automatiza a montagem de uma planilha final (`planilhas/planilha_at
 - uma **base TOTVS** (`base_dados_TOTVS.xlsx`) contendo dados (descrição, unidade, família comercial, narrativa etc.);
 - dicionários auxiliares para **materiais**, **normas**, **size dimension** e **traduções**.
 
-O runner principal do pipeline está em `Testes/app.py` (há também `main/app.py` por compatibilidade).
+O runner principal do pipeline está em `main/app.py`.
 
 ---
 
@@ -18,7 +18,6 @@ O runner principal do pipeline está em `Testes/app.py` (há também `main/app.p
   - `pandas`
   - `openpyxl`
   - `thefuzz`
-  - `unidecode`
 
 Instalação rápida:
 
@@ -73,12 +72,6 @@ pip install -r requirements.txt
 No diretório raiz do projeto:
 
 ```bash
-python Testes/app.py
-```
-
-(Alternativa por compatibilidade)
-
-```bash
 python main/app.py
 ```
 
@@ -101,7 +94,7 @@ No `pandas` isso significa:
 
 ## Processo (pipeline)
 
-Ordem executada em `Testes/app.py`:
+Ordem executada em `main/app.py`:
 
 1. **Gerar planilha base** (`src/inserir_codigos_de_itens.py`)
    - Lê o modelo e cria `planilhas/planilha_atualizada.xlsx`.
@@ -191,4 +184,4 @@ O modelo (`planilhas/planilha_padrao.xlsx`) contém estas colunas:
 - `src/` módulos de enriquecimento e geração
 - `dados/` dicionários e CSV de códigos
 - `planilhas/` modelo e arquivos Excel (entrada e saída)
-- `Testes/app.py` runner principal
+- `main/app.py` runner principal

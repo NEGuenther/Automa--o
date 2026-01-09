@@ -12,7 +12,7 @@ def inserir_valores_fixos(
     :param caminho_planilha_modelo: Caminho da planilha de entrada
     :param caminho_saida: Caminho onde a planilha será salva
     """
-    print("Inserindo valores fixos em SAP10/SAP1...")
+    print("Inserindo valores fixos em SAP10/SAP14...")
 
     # Carrega a planilha
     workbook = load_workbook(caminho_planilha_modelo)

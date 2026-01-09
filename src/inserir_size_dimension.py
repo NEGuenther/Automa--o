@@ -44,26 +44,3 @@ def encontrar_size_dimension(narrativa, size_dimension):
     if melhor_material and melhor_material.upper():
         return "material nao informado"
     return melhor_material if pontuacao > 80 else None  # Retorna o material se a pontuação for maior que 80
-
-if __name__ == "__main__":
-    # Caminhos dos arquivos
-    caminho_dicionario = "dados/dicionario_size_dimension.csv"
-    caminho_planilha = "planilhas/base_dados_TOTVS.xlsx"
-    caminho_saida = "planilhas/planilha_atualizada.xlsx"
-
-    # Carregar o dicionário de materiais
-    materiais = carregar_dicionario_size_dimension(caminho_dicionario)
-
-    # Carregar a planilha
-    df = pd.read_excel(caminho_planilha)
-
-    # Verificar se a coluna SAP15 existe
-    if "SAP15" not in df.columns:
-        raise ValueError("A coluna 'SAP15' não foi encontrada na planilha.")
-
-    # Processar cada narrativa e encontrar o material correspondente
-    #df["material_encontrado"] = df["Coluna4"].apply(lambda narrativa: encontrar_material(narrativa, materiais))
-    # Salvar a planilha atualizada
-    df.to_excel(caminho_saida, index=False)
-
-    print(f"Planilha atualizada salva em: {caminho_saida}")
