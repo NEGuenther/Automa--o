@@ -22,6 +22,7 @@ BASE_TOTVS = BASE_DIR / "planilhas/base_dados_TOTVS.xlsx"
 DICIONARIO_MATERIAIS = BASE_DIR / "dados/dicionario_materiais.csv"
 DICIONARIO_NORMAS = BASE_DIR / "dados/dicionario_normas.csv"
 DICIONARIO_SIZE_DIMENSION = BASE_DIR / "dados/dicionario_size_dimension.csv"
+DICIONARIO_TRADUCOES = BASE_DIR / "dados/dicionario.xlsx"
 
 # Garante que os módulos em src sejam encontrados
 if str(SRC_DIR) not in sys.path:
@@ -30,7 +31,7 @@ if str(SRC_DIR) not in sys.path:
 from inserir_codigos_de_itens import gerar_planilha_com_codigos
 from inserir_internal_comment import inserir_internal_coments
 from inserir_unidade import inserir_unidade
-from inserir_traducoes import Traducoes
+from inserir_traducoes import inserir_traducoes
 from inserir_material import carregar_dicionario, encontrar_material
 from inserir_valores_fixos import inserir_valores_fixos
 from inserir_narrativas import inserir_narrativa
@@ -187,6 +188,19 @@ def ajustar_narrativas(saida: Path) -> None:
 	print("Atualização de SAP15 concluída.")
 
 
+def processar_traducoes(saida: Path) -> None:
+	"""Processa traduções das descrições de produtos.
+	
+	Chama a função do módulo inserir_traducoes para preencher as colunas
+	SAP1, SAP2, SAP3 e Coluna32 com traduções em português, inglês, espanhol e alemão.
+	"""
+	inserir_traducoes(
+		caminho_planilha_atualizada=str(saida),
+		caminho_base_totvs=str(BASE_TOTVS),
+		caminho_dicionario_traducoes=str(DICIONARIO_TRADUCOES),
+	)
+
+
 def main() -> None:
 	"""Orquestra o pipeline de geração, enriquecimento e ajustes da planilha."""
 	saida = gerar_planilha_base(PLANILHA_MODELO, CSV_CODIGOS, PLANILHA_SAIDA)
@@ -214,6 +228,7 @@ def main() -> None:
 	processar_materiais(saida)
 	processar_normas(saida)
 	processar_size_dimension(saida)
+	processar_traducoes(saida)
 	inserir_valores_fixos_planilha(saida)
 	ajustar_narrativas(saida)
 

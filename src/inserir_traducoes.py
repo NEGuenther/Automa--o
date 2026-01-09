@@ -1,6 +1,104 @@
 import pandas as pd
 from thefuzz import process, fuzz
 
+
+def inserir_traducoes(
+    caminho_planilha_atualizada: str,
+    caminho_base_totvs: str,
+    caminho_dicionario_traducoes: str,
+) -> None:
+    """Preenche traduções (SAP1/SAP2/SAP3/Coluna32) a partir da Descrição (TOTVS).
+
+    Regras:
+    - Usa a coluna "Item" da base TOTVS para achar a "Descrição" do item.
+    - Compara a descrição com o dicionário (dados/dicionario.xlsx) por substring.
+    - Escreve as traduções em:
+        - SAP1 = português
+        - SAP2 = inglês
+        - SAP3 = espanhol
+        - Coluna32 = alemão
+    - NÃO cria colunas novas: se alguma dessas colunas não existir na planilha, lança erro.
+    """
+    print("Processando traduções das descrições de produtos...")
+
+    # Não criar colunas novas: valida que as colunas de destino existem na planilha
+    colunas_destino = {
+        "PORTUGUÊS": "SAP1",
+        "INGLÊS": "SAP2",
+        "ESPANHOL": "SAP3",
+        "ALEMÂO": "Coluna32",
+    }
+
+    try:
+        df_planilha = pd.read_excel(caminho_planilha_atualizada)
+        df_totvs = pd.read_excel(caminho_base_totvs, header=4)
+        df_dicionario = pd.read_excel(caminho_dicionario_traducoes)
+
+        faltando = [col for col in colunas_destino.values() if col not in df_planilha.columns]
+        if faltando:
+            raise ValueError(
+                "A planilha atualizada não contém as colunas de tradução esperadas. "
+                f"Faltando: {faltando}. "
+                "Ajuste o modelo para incluir SAP1, SAP2, SAP3 e Coluna32 (não serão criadas automaticamente)."
+            )
+
+        # item -> descrição (TOTVS)
+        mapa_descricoes = dict(
+            zip(
+                df_totvs["Item"].astype(str),
+                df_totvs["Descrição"].astype(str),
+            )
+        )
+
+        # português -> traduções
+        dicionario_traducoes: dict[str, dict[str, object]] = {}
+        for _, row in df_dicionario.iterrows():
+            palavra_pt = str(row["PORTUGUÊS"]).strip().lower()
+            if not palavra_pt or palavra_pt == "nan":
+                continue
+            if palavra_pt in dicionario_traducoes:
+                continue
+            dicionario_traducoes[palavra_pt] = {
+                "PORTUGUÊS": row.get("PORTUGUÊS"),
+                "INGLÊS": row.get("INGLÊS"),
+                "ESPANHOL": row.get("ESPANHOL"),
+                "ALEMÂO": row.get("ALEMÂO"),
+            }
+
+        col_codigo = df_planilha.columns[0]
+
+        for idx in range(1, len(df_planilha)):
+            codigo = str(df_planilha.loc[idx, col_codigo]).strip()
+            if not codigo or codigo.lower() == "nan":
+                continue
+
+            descricao = mapa_descricoes.get(codigo, "")
+            if not descricao or str(descricao).lower() == "nan":
+                continue
+
+            descricao_lower = str(descricao).lower()
+            traducoes_encontradas = None
+
+            for palavra_pt, traducoes in dicionario_traducoes.items():
+                if len(palavra_pt) > 5 and palavra_pt in descricao_lower:
+                    traducoes_encontradas = traducoes
+                    break
+
+            if not traducoes_encontradas:
+                continue
+
+            for idioma, coluna in colunas_destino.items():
+                df_planilha.at[idx, coluna] = traducoes_encontradas.get(idioma)
+
+        contadores = {idioma: int(df_planilha[col].notna().sum()) for idioma, col in colunas_destino.items()}
+        df_planilha.to_excel(caminho_planilha_atualizada, index=False)
+
+        print(f"Traduções preenchidas: {contadores}")
+        print("Traduções processadas e salvas na planilha.")
+    except Exception as e:
+        print(f"Aviso: erro ao processar traduções: {e}")
+
+
 class Traducoes:
     def __init__(self, caminho_narrativas, caminho_traducoes, coluna_narrativa="Descrição", coluna_portugues="SAP1"):
         """
@@ -27,6 +125,7 @@ class Traducoes:
     def comparar_palavra(self, palavra_pt):
         """
         Compara uma palavra em português com as traduções disponíveis e retorna as melhores traduções para cada idioma.
+        Tenta match exato primeiro, depois fuzzy, depois substring.
         :param palavra_pt: A palavra em português a ser comparada.
         :return: Um dicionário com as melhores traduções para cada idioma.
         """
@@ -41,15 +140,32 @@ class Traducoes:
         if not base_portugues:
             return {lingua: None for lingua in self.linguas}
 
+        traducoes_por_idioma = {lingua: None for lingua in self.linguas}
+        palavra_pt_str = str(palavra_pt).lower()
+
+        # Primeiro tenta buscar por substring (palavra_pt contém termo do dicionário)
+        for termo_dict in base_portugues:
+            termo_dict_lower = termo_dict.lower()
+            if termo_dict_lower in palavra_pt_str and len(termo_dict_lower) > 5:
+                # Encontrou um match por substring
+                linha_match = self.df_traducoes[
+                    self.df_traducoes[self.coluna_portugues].astype(str) == termo_dict
+                ]
+                if not linha_match.empty:
+                    linha_match = linha_match.iloc[0]
+                    for lingua in self.linguas:
+                        valor = linha_match.get(lingua)
+                        traducoes_por_idioma[lingua] = valor if pd.notna(valor) else None
+                    return traducoes_por_idioma
+
+        # Se não achou por substring, tenta fuzzy matching
         melhor_valor, pontuacao = process.extractOne(
-            str(palavra_pt),
+            palavra_pt_str,
             base_portugues,
             scorer=fuzz.ratio,
         )
 
-        traducoes_por_idioma = {lingua: None for lingua in self.linguas}
-
-        if pontuacao <= 80:
+        if pontuacao <= 75:
             return traducoes_por_idioma
 
         # pega a primeira linha que bate com o melhor valor encontrado em português
